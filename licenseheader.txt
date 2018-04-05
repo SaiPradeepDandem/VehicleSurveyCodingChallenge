@@ -1,0 +1,7 @@
+﻿<#if licenseFirst??>
+${licenseFirst}
+</#if>
+${licensePrefix} Copyright © - 2018 Sai Pradeep Dandem. All rights reserved.
+<#if licenseLast??>
+${licenseLast}
+</#if>
