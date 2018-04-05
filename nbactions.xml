@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<actions>
+        <action>
+            <actionName>CUSTOM-FullMvn</actionName>
+            <displayName>FullMvn</displayName>
+            <goals>
+                <goal>clean:clean</goal>
+                <goal>install:install</goal>
+                <goal>test</goal>
+            </goals>
+        </action>
+    </actions>

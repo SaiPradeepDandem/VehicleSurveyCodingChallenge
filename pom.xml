@@ -20,4 +20,48 @@
             <scope>test</scope>
         </dependency> 
     </dependencies>
+    
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>2.4</version>
+                <configuration>
+                    <!-- This is copy paste from maven-jar-plugin, but this settings go only to jar with dependencies -->
+                    <archive>
+                        <addMavenDescriptor>false</addMavenDescriptor>
+                        <manifestEntries>
+                            <Built-By></Built-By>
+                            <Build-Jdk></Build-Jdk>
+                            <Created-By></Created-By>
+                            <Archiver-Version></Archiver-Version>
+                            <Application-Name>VehicleSurveyCodingChallenge</Application-Name>
+                            <Permissions>all-permissions</Permissions>
+                            <Codebase>*</Codebase>
+                        </manifestEntries>
+                        <manifest>
+                            <mainClass>com.sai.vehiclesurvey.AnalyzeVehicleSurvey</mainClass>
+                        </manifest>                        
+                    </archive>
+
+                    <descriptorRefs>
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
+                    </descriptorRefs>
+                    <!--                    <appendAssemblyId>true</appendAssemblyId>-->
+
+                </configuration>
+                <!-- Execute build Jar with dependencies by package phase to build it automatic -->
+                <executions>
+                    <execution>
+                        <id>make-assembly</id> <!-- this is used for inheritance merges -->
+                        <phase>package</phase> <!-- bind to the packaging phase -->
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>
