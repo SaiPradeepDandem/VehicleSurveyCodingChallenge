@@ -12,11 +12,15 @@ import com.sai.vehiclesurvey.utils.SurveyUtils;
  */
 public abstract class Vehicle {
 
-    private long hoseAFirstRead;
+    private Long hoseAFirstRead;
 
-    private long hoseASecondRead;
+    private Long hoseASecondRead;
 
     private double axleGapInMeters;
+
+    public Vehicle() {
+
+    }
 
     public Vehicle(long hoseAFirstRead, long hoseASecondRead, double axleGapInMeters) {
         if (hoseAFirstRead < 0 || hoseASecondRead < 0 || axleGapInMeters < 0) {
@@ -33,7 +37,7 @@ public abstract class Vehicle {
         this.axleGapInMeters = axleGapInMeters;
     }
 
-    public long getHoseAFirstRead() {
+    public Long getHoseAFirstRead() {
         return hoseAFirstRead;
     }
 
@@ -41,7 +45,7 @@ public abstract class Vehicle {
         this.hoseAFirstRead = hoseAFirstRead;
     }
 
-    public long getHoseASecondRead() {
+    public Long getHoseASecondRead() {
         return hoseASecondRead;
     }
 
@@ -73,5 +77,16 @@ public abstract class Vehicle {
      */
     public final double getSpeedInKMPH() {
         return SurveyUtils.convertToKmsPerHr(getSpeedInMPS());
+    }
+
+    /**
+     * Utility method to check whether both the readings of the hose are
+     * recorded or not.
+     *
+     * @return {@code true} if both the readings are present, else returns
+     * {@code false}.
+     */
+    public boolean isFull() {
+        return hoseAFirstRead != null && hoseASecondRead != null;
     }
 }

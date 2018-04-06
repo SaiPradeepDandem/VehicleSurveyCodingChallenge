@@ -10,6 +10,10 @@ package com.sai.vehiclesurvey.model;
  */
 public class NorthBoundVehicle extends Vehicle {
 
+    public NorthBoundVehicle() {
+        super();
+    }
+
     public NorthBoundVehicle(long hoseAFirstRead, long hoseASecondRead, double axleGapInMeters) {
         super(hoseAFirstRead, hoseASecondRead, axleGapInMeters);
     }

@@ -19,8 +19,8 @@ public class NorthBoundVehicleTest {
         final long hoseASecondRead = 48956;
         final double axleGapInMeters = 2.5;
         NorthBoundVehicle nbv = new NorthBoundVehicle(hoseAFirstRead, hoseASecondRead, axleGapInMeters);
-        assertEquals(hoseAFirstRead, nbv.getHoseAFirstRead());
-        assertEquals(hoseASecondRead, nbv.getHoseASecondRead());
+        assertEquals(hoseAFirstRead, nbv.getHoseAFirstRead().longValue());
+        assertEquals(hoseASecondRead, nbv.getHoseASecondRead().longValue());
         assertEquals(axleGapInMeters, nbv.getAxleGapInMeters(), 0);
     }
 
@@ -41,4 +41,16 @@ public class NorthBoundVehicleTest {
         assertEquals(3.6, nbv.getSpeedInKMPH(), 0);
     }
 
+    @Test
+    public void testIsFull(){
+        NorthBoundVehicle nbv = new NorthBoundVehicle();
+        assertEquals(false, nbv.isFull());
+        nbv.setHoseAFirstRead(32345);
+        assertEquals(false, nbv.isFull());
+        nbv.setAxleGapInMeters(2.5);
+        assertEquals(false, nbv.isFull());
+        nbv.setHoseASecondRead(345567);
+        assertEquals(true, nbv.isFull());
+        
+    }
 }

@@ -4,6 +4,8 @@
 package com.sai.vehiclesurvey;
 
 import com.sai.vehiclesurvey.model.EachDayData;
+import com.sai.vehiclesurvey.model.NorthBoundVehicle;
+import com.sai.vehiclesurvey.model.SouthBoundVehicle;
 import com.sai.vehiclesurvey.model.SurveyData;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -50,6 +52,23 @@ public class AnalyzeVehicleSurveyTest {
         final EachDayData dayData = surveyData.getDays().get(0);
         assertEquals(1, dayData.getNorthBoundVehicles().size());
         assertEquals(2, dayData.getSouthBoundVehicles().size());
+        
+       NorthBoundVehicle nbv= dayData.getNorthBoundVehicles().get(0);
+       assertEquals(268981, nbv.getHoseAFirstRead().longValue());
+       assertEquals(269123, nbv.getHoseASecondRead().longValue());
+       
+       SouthBoundVehicle sbv1 = dayData.getSouthBoundVehicles().get(0);
+       assertEquals(604957, sbv1.getHoseAFirstRead().longValue());
+       assertEquals(605128, sbv1.getHoseASecondRead().longValue());
+       assertEquals(604960, sbv1.getHoseBFirstRead().longValue());
+       assertEquals(605132, sbv1.getHoseBSecondRead().longValue());
+       
+       SouthBoundVehicle sbv2 = dayData.getSouthBoundVehicles().get(1);
+       assertEquals(1089807, sbv2.getHoseAFirstRead().longValue());
+       assertEquals(1089948, sbv2.getHoseASecondRead().longValue());
+       assertEquals(1089810, sbv2.getHoseBFirstRead().longValue());
+       assertEquals(1089951, sbv2.getHoseBSecondRead().longValue());
+       
     }
 
     @Test

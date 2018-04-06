@@ -9,7 +9,7 @@ package com.sai.vehiclesurvey.utils;
  * @author sai.dandem
  */
 public class SurveyUtils {
-    public static final long MILLIS_IN_24HRS = 86_400_000;
+    public static final long MILLIS_PER_24HRS = 86_400_000;
 
     /**
      * Converts the given meters per second speed to kilometers per hour value.
@@ -40,7 +40,7 @@ public class SurveyUtils {
             throw new IllegalArgumentException("Start time and end time cannot be same values");
         }
         if (endTimeInMs < startTimeInMs) {
-            endTimeInMs = startTimeInMs + (MILLIS_IN_24HRS - startTimeInMs) + endTimeInMs;
+            endTimeInMs = startTimeInMs + (MILLIS_PER_24HRS - startTimeInMs) + endTimeInMs;
         }
         double diffInSecs = (endTimeInMs - startTimeInMs) / 1000;
         return distanceInMts / diffInSecs;

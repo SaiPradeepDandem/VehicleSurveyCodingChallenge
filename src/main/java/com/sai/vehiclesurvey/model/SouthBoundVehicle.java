@@ -10,9 +10,13 @@ package com.sai.vehiclesurvey.model;
  */
 public class SouthBoundVehicle extends Vehicle {
 
-    private long hoseBFirstRead;
+    private Long hoseBFirstRead;
 
-    private long hoseBSecondRead;
+    private Long hoseBSecondRead;
+
+    public SouthBoundVehicle() {
+        super();
+    }
 
     public SouthBoundVehicle(long hoseAFirstRead, long hoseBFirstRead, long hoseASecondRead, long hoseBSecondRead,
             double axleGapInMeters) {
@@ -27,7 +31,7 @@ public class SouthBoundVehicle extends Vehicle {
         this.hoseBSecondRead = hoseBSecondRead;
     }
 
-    public long getHoseBFirstRead() {
+    public Long getHoseBFirstRead() {
         return hoseBFirstRead;
     }
 
@@ -35,7 +39,7 @@ public class SouthBoundVehicle extends Vehicle {
         this.hoseBFirstRead = hoseBFirstRead;
     }
 
-    public long getHoseBSecondRead() {
+    public Long getHoseBSecondRead() {
         return hoseBSecondRead;
     }
 
@@ -43,4 +47,8 @@ public class SouthBoundVehicle extends Vehicle {
         this.hoseBSecondRead = hoseBSecondRead;
     }
 
+    @Override
+    public boolean isFull() {
+        return super.isFull() && hoseBFirstRead != null && hoseBSecondRead != null;
+    }
 }
