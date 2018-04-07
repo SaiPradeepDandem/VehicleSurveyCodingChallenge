@@ -57,7 +57,7 @@ public class AnalyzeVehicleSurvey {
         }
 
         if (!parser.isEmpty()) {
-            throw new IllegalStateException("Something went wrong in parsing. Mostly due to improper data.");
+            throw new IllegalStateException("Not a valid data");
         }
     }
 
