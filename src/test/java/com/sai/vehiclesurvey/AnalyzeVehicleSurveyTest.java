@@ -11,10 +11,10 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.List;
-import org.junit.Test;
-import static org.junit.Assert.*;
 import org.junit.Rule;
+import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import static org.junit.Assert.*;
 
 /**
  * Test class for AnalyzeVehicleSurvey.
@@ -33,7 +33,8 @@ public class AnalyzeVehicleSurveyTest {
 
     @Test //Passed
     public void testParseOneDayData() {
-        List<String> readingsList = Arrays.asList("A268981", "A269123", "A604957", "B604960", "A605128", "B605132", "A1089807", "B1089810",
+        List<String> readingsList = Arrays.asList("A268981", "A269123", "A604957", "B604960", "A605128", "B605132",
+                "A1089807", "B1089810",
                 "A1089948", "B1089951");
         AnalyzeVehicleSurvey obj = new AnalyzeVehicleSurvey();
         obj.parseData(readingsList);
@@ -64,10 +65,10 @@ public class AnalyzeVehicleSurveyTest {
 
     }
 
-    @Test
+    @Test // Passed
     public void testParseTwoDayData() {
-        List<String> readingsList = Arrays.asList("A86328771", "B86328774", "A86328899", "B86328902", "A582668", "B582671", "A582787",
-                "B582789", "A668981", "A669123");
+        List<String> readingsList = Arrays.asList("A86328771", "B86328774", "A86328899", "B86328902", "A582668",
+                "B582671", "A582787", "B582789", "A668981", "A669123");
         AnalyzeVehicleSurvey obj = new AnalyzeVehicleSurvey();
         obj.parseData(readingsList);
 
@@ -80,10 +81,6 @@ public class AnalyzeVehicleSurveyTest {
         assertEquals(0, dayOneData.getNorthBoundVehicles().size());
         assertEquals(1, dayOneData.getSouthBoundVehicles().size());
 
-        NorthBoundVehicle nbv1 = dayOneData.getNorthBoundVehicles().get(0);
-        assertEquals(86328800, nbv1.getHoseAFirstRead().longValue());
-        assertEquals(86328977, nbv1.getHoseASecondRead().longValue());
-
         SouthBoundVehicle sbv1 = dayOneData.getSouthBoundVehicles().get(0);
         assertEquals(86328771, sbv1.getHoseAFirstRead().longValue());
         assertEquals(86328774, sbv1.getHoseBFirstRead().longValue());
@@ -91,19 +88,51 @@ public class AnalyzeVehicleSurveyTest {
         assertEquals(86328902, sbv1.getHoseBSecondRead().longValue());
 
         // Day 2
-        final EachDayData dayTwoData = surveyData.getDays().get(0);
+        final EachDayData dayTwoData = surveyData.getDays().get(1);
         assertEquals(1, dayTwoData.getNorthBoundVehicles().size());
         assertEquals(1, dayTwoData.getSouthBoundVehicles().size());
 
-        NorthBoundVehicle nbv2 = dayOneData.getNorthBoundVehicles().get(0);
+        NorthBoundVehicle nbv2 = dayTwoData.getNorthBoundVehicles().get(0);
         assertEquals(668981, nbv2.getHoseAFirstRead().longValue());
         assertEquals(669123, nbv2.getHoseASecondRead().longValue());
 
-        SouthBoundVehicle sbv2 = dayOneData.getSouthBoundVehicles().get(0);
+        SouthBoundVehicle sbv2 = dayTwoData.getSouthBoundVehicles().get(0);
         assertEquals(582668, sbv2.getHoseAFirstRead().longValue());
         assertEquals(582671, sbv2.getHoseBFirstRead().longValue());
         assertEquals(582787, sbv2.getHoseASecondRead().longValue());
         assertEquals(582789, sbv2.getHoseBSecondRead().longValue());
+    }
+
+    @Test // Passed
+    public void testParseFiveDayData() {
+        List<String> readingsList = Arrays.asList("A1000", "B1003", "A1170", "B1173", "A3000", "A3175",
+                "A1000", "B1003", "A1170", "B1173", "A3000", "A3175",
+                "A1000", "B1003", "A1170", "B1173", "A3000", "A3175",
+                "A1000", "B1003", "A1170", "B1173", "A3000", "A3175",
+                "A1000", "B1003", "A1170", "B1173", "A3000", "A3175");
+
+        AnalyzeVehicleSurvey obj = new AnalyzeVehicleSurvey();
+        obj.parseData(readingsList);
+
+        final SurveyData surveyData = obj.getSurveyData();
+        assertNotNull(surveyData);
+        assertEquals(5, surveyData.getDays().size());
+
+        for (int i = 0; i < 5; i++) {
+            final EachDayData dayData = surveyData.getDays().get(i);
+            assertEquals(1, dayData.getNorthBoundVehicles().size());
+            assertEquals(1, dayData.getSouthBoundVehicles().size());
+
+            NorthBoundVehicle nbv = dayData.getNorthBoundVehicles().get(0);
+            assertEquals(3000, nbv.getHoseAFirstRead().longValue());
+            assertEquals(3175, nbv.getHoseASecondRead().longValue());
+
+            SouthBoundVehicle sbv = dayData.getSouthBoundVehicles().get(0);
+            assertEquals(1000, sbv.getHoseAFirstRead().longValue());
+            assertEquals(1003, sbv.getHoseBFirstRead().longValue());
+            assertEquals(1170, sbv.getHoseASecondRead().longValue());
+            assertEquals(1173, sbv.getHoseBSecondRead().longValue());
+        }
     }
 
     /**
@@ -136,101 +165,10 @@ public class AnalyzeVehicleSurveyTest {
         assertEquals(86328902, sbv.getHoseBSecondRead().longValue());
     }
 
-    /**
-     * Condition when a vehicle on one lane start crossing before the other lane
-     * vehicle's back axle crosses Hose-B.(back axle already crossed Hose-A)
-     */
-    @Test
-    public void testParseData_When_NBVehiclesFrontCrossesAHose_BeforeSBVehiclesBackCrossesBHose() {
-        List<String> readingsList = Arrays.asList("A76328771", "B76328774", "A76328899", "A76328900", "B76328902",
-                "A76329071");
-        AnalyzeVehicleSurvey obj = new AnalyzeVehicleSurvey();
-        obj.parseData(readingsList);
-
-        final SurveyData surveyData = obj.getSurveyData();
-        assertNotNull(surveyData);
-        assertEquals(1, surveyData.getDays().size());
-
-        final EachDayData dayData = surveyData.getDays().get(0);
-        assertEquals(1, dayData.getNorthBoundVehicles().size());
-        assertEquals(1, dayData.getSouthBoundVehicles().size());
-
-        NorthBoundVehicle nbv = dayData.getNorthBoundVehicles().get(0);
-        assertEquals(76328900, nbv.getHoseAFirstRead().longValue());
-        assertEquals(76329071, nbv.getHoseASecondRead().longValue());
-
-        SouthBoundVehicle sbv = dayData.getSouthBoundVehicles().get(0);
-        assertEquals(76328771, sbv.getHoseAFirstRead().longValue());
-        assertEquals(76328774, sbv.getHoseBFirstRead().longValue());
-        assertEquals(76328899, sbv.getHoseASecondRead().longValue());
-        assertEquals(76328902, sbv.getHoseBSecondRead().longValue());
-    }
-
-    /**
-     * VERY RARE CONDITION Condition when a vehicle(V1) on one lane start
-     * crossing before the other lane vehicle's(V2) front axle crosses
-     * Hose-B(front axle already crossed Hose-A). And V1 back axle crosses
-     * Hose-A before V2 back axle crosses Hose-B (back axle already crossed
-     * Hose-A).
-     */
-    @Test
-    public void testParseData_When_AVehicleStarts_BeforeOtherVehiclesFront_FinishesB() {
-        List<String> readingsList = Arrays.asList("A76328771", "A76328772", "B76328774", "A76328899", "A76328901",
-                "B76328902");
-        AnalyzeVehicleSurvey obj = new AnalyzeVehicleSurvey();
-        obj.parseData(readingsList);
-
-        final SurveyData surveyData = obj.getSurveyData();
-        assertNotNull(surveyData);
-        assertEquals(1, surveyData.getDays().size());
-
-        final EachDayData dayData = surveyData.getDays().get(0);
-        assertEquals(1, dayData.getNorthBoundVehicles().size());
-        assertEquals(1, dayData.getSouthBoundVehicles().size());
-
-        NorthBoundVehicle nbv = dayData.getNorthBoundVehicles().get(0);
-        assertEquals(76328772, nbv.getHoseAFirstRead().longValue());
-        assertEquals(76328901, nbv.getHoseASecondRead().longValue());
-
-        SouthBoundVehicle sbv = dayData.getSouthBoundVehicles().get(0);
-        assertEquals(76328771, sbv.getHoseAFirstRead().longValue());
-        assertEquals(76328774, sbv.getHoseBFirstRead().longValue());
-        assertEquals(76328899, sbv.getHoseASecondRead().longValue());
-        assertEquals(76328902, sbv.getHoseBSecondRead().longValue());
-    }
-
-    @Test //Passed
-    public void testParseData_When_TwoVehiclesCrossesOnNB_WhileOneCrossesOnSB() {
-        List<String> readingsList = Arrays.asList("A1000", "B1010", "A1100", "A1270", "A1400", "A1570", "A3000", "B3010");
-        AnalyzeVehicleSurvey obj = new AnalyzeVehicleSurvey();
-        obj.parseData(readingsList);
-
-        final SurveyData surveyData = obj.getSurveyData();
-        assertNotNull(surveyData);
-        assertEquals(1, surveyData.getDays().size());
-
-        final EachDayData dayData = surveyData.getDays().get(0);
-        assertEquals(2, dayData.getNorthBoundVehicles().size());
-        assertEquals(1, dayData.getSouthBoundVehicles().size());
-
-        NorthBoundVehicle nbv1 = dayData.getNorthBoundVehicles().get(0);
-        assertEquals(1100, nbv1.getHoseAFirstRead().longValue());
-        assertEquals(1270, nbv1.getHoseASecondRead().longValue());
-
-        NorthBoundVehicle nbv2 = dayData.getNorthBoundVehicles().get(1);
-        assertEquals(1400, nbv2.getHoseAFirstRead().longValue());
-        assertEquals(1570, nbv2.getHoseASecondRead().longValue());
-
-        SouthBoundVehicle sbv1 = dayData.getSouthBoundVehicles().get(0);
-        assertEquals(1000, sbv1.getHoseAFirstRead().longValue());
-        assertEquals(1010, sbv1.getHoseBFirstRead().longValue());
-        assertEquals(3000, sbv1.getHoseASecondRead().longValue());
-        assertEquals(3010, sbv1.getHoseBSecondRead().longValue());
-    }
-
     @Test //Passed
     public void testParseData_When_TwoVehiclesCrossesOnSB_WhileOneCrossesOnNB() {
-        List<String> readingsList = Arrays.asList("A1000", "A1100", "B1104", "A1270", "B1274", "A2400", "B2404", "A2570", "B2574", "A3000");
+        List<String> readingsList = Arrays.asList("A1000", "A1100", "B1104", "A1270", "B1274", "A2400", "B2404", "A2570",
+                "B2574", "A3000");
         AnalyzeVehicleSurvey obj = new AnalyzeVehicleSurvey();
         obj.parseData(readingsList);
 

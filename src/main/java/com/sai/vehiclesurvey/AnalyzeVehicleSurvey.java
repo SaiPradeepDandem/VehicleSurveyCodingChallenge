@@ -28,6 +28,20 @@ public class AnalyzeVehicleSurvey {
         return surveyData;
     }
 
+    public static void main(String[] args) throws URISyntaxException, IOException {
+        AnalyzeVehicleSurvey obj = new AnalyzeVehicleSurvey();
+        List<String> readings = obj.readDataFile();
+        obj.parseData(readings);
+        System.out.println("Days ::" + obj.getSurveyData().getDays().size());
+        for (int i = 0; i < obj.getSurveyData().getDays().size(); i++) {
+            EachDayData dayData = obj.getSurveyData().getDays().get(i);
+            System.out.println("DAY "+(i+1));
+            System.out.println("North Bound Vehicles :: "+dayData.getNorthBoundVehicles().size());
+            System.out.println("South Bound Vehicles :: "+dayData.getSouthBoundVehicles().size());
+            System.out.println("");
+        }
+    }
+
     /**
      * Read the data file from the resources and provide the contents as list of
      * strings.
@@ -37,7 +51,7 @@ public class AnalyzeVehicleSurvey {
      * @throws IOException
      */
     public List<String> readDataFile() throws URISyntaxException, IOException {
-        Path dataFile = Paths.get(getClass().getResource("/data/sampledata.txt").toURI());
+        Path dataFile = Paths.get(AnalyzeVehicleSurvey.class.getResource("E:\\Projects\\VehicleSurveyCodingChallenge\\src\\main\\resources\\data\\sampledata.txt").toURI());
         return Files.readAllLines(dataFile);
     }
 
@@ -47,8 +61,9 @@ public class AnalyzeVehicleSurvey {
      * @param data List of readings (strings).
      */
     public void parseData(List<String> data) {
+        // Instantiating the core survey data object.
         surveyData = new SurveyData();
-        surveyData.getDays().add(new EachDayData());
+
         DataParser parser = new DataParser();
         for (int i = 0; i < data.size(); i++) {
             String reading = data.get(i);
@@ -56,17 +71,30 @@ public class AnalyzeVehicleSurvey {
             parser.parse(reading, nextReading);
         }
 
+        // Checking if the parser has any unfinished data.
         if (!parser.isEmpty()) {
             throw new IllegalStateException("Not a valid data");
         }
     }
 
+    /**
+     * Class to parse the provided reading and push into the appropriate position.
+     */
     class DataParser {
 
+        private EachDayData dayData = new EachDayData();
+
+        private long lastMax = 0;
+
         private final List<NorthBoundVehicle> nbvs = new ArrayList<>();
+
         private final List<SouthBoundVehicle> sbvs = new ArrayList<>();
 
         public void parse(String reading, String nextReading) {
+            if (surveyData.getDays().isEmpty()) {
+                surveyData.getDays().add(dayData);
+            }
+            checkDayChanged(reading);
             if (reading.startsWith("A")) {
                 if (nextReading != null && nextReading.startsWith("B")) {
                     loadInSB(reading);
@@ -78,6 +106,11 @@ public class AnalyzeVehicleSurvey {
             }
         }
 
+        /**
+         * Loads the reading into NorthBoundVehicle.
+         *
+         * @param reading Reading to be pushed.
+         */
         private void loadInNB(String reading) {
             if (nbvs.isEmpty()) {
                 nbvs.add(new NorthBoundVehicle());
@@ -85,41 +118,76 @@ public class AnalyzeVehicleSurvey {
             if (nbvs.get(0).isFull()) {
                 throw new IllegalStateException("Cannot be a full reading north bound vehicle.");
             } else {
+                long readingValue = Long.parseLong(reading.substring(1));
                 if (nbvs.get(0).getHoseAFirstRead() == null) {
-                    nbvs.get(0).setHoseAFirstRead(Long.parseLong(reading.substring(1)));
+                    nbvs.get(0).setHoseAFirstRead(readingValue);
                 } else {
-                    nbvs.get(0).setHoseASecondRead(Long.parseLong(reading.substring(1)));
-                    surveyData.getDays().get(0).getNorthBoundVehicles().add(nbvs.get(0));
+                    if (readingValue > lastMax) {
+                        lastMax = readingValue;
+                    }
+                    nbvs.get(0).setHoseASecondRead(readingValue);
+                    dayData.getNorthBoundVehicles().add(nbvs.get(0));
                     nbvs.remove(0);
                 }
             }
         }
 
+        /**
+         * Loads the reading into SouthBoundVehicle.
+         *
+         * @param reading Reading to be pushed.
+         */
         private void loadInSB(String reading) {
             if (sbvs.isEmpty()) {
                 sbvs.add(new SouthBoundVehicle());
             }
+            long readingValue = Long.parseLong(reading.substring(1));
             if (sbvs.get(0).isFull()) {
                 throw new IllegalStateException("Cannot be a full reading south bound vehicle.");
             } else {
                 if (reading.startsWith("A")) {
                     if (sbvs.get(0).getHoseAFirstRead() == null) {
-                        sbvs.get(0).setHoseAFirstRead(Long.parseLong(reading.substring(1)));
+                        sbvs.get(0).setHoseAFirstRead(readingValue);
                     } else {
-                        sbvs.get(0).setHoseASecondRead(Long.parseLong(reading.substring(1)));
+                        if (readingValue > lastMax) {
+                            lastMax = readingValue;
+                        }
+                        sbvs.get(0).setHoseASecondRead(readingValue);
                     }
                 } else {
                     if (sbvs.get(0).getHoseBFirstRead() == null) {
-                        sbvs.get(0).setHoseBFirstRead(Long.parseLong(reading.substring(1)));
+                        sbvs.get(0).setHoseBFirstRead(readingValue);
                     } else {
-                        sbvs.get(0).setHoseBSecondRead(Long.parseLong(reading.substring(1)));
-                        surveyData.getDays().get(0).getSouthBoundVehicles().add(sbvs.get(0));
+                        if (readingValue > lastMax) {
+                            lastMax = readingValue;
+                        }
+                        sbvs.get(0).setHoseBSecondRead(readingValue);
+                        dayData.getSouthBoundVehicles().add(sbvs.get(0));
                         sbvs.remove(0);
                     }
                 }
             }
         }
 
+        /**
+         * Checks if the day is changed based on the reading value.
+         *
+         * @param reading Reading to be checked.
+         */
+        private void checkDayChanged(String reading) {
+            long readingValue = Long.parseLong(reading.substring(1));
+            if (readingValue < lastMax) {
+                dayData = new EachDayData();
+                surveyData.getDays().add(dayData);
+                lastMax = 0;
+            }
+        }
+
+        /**
+         * Checks whether any of the data is present.
+         *
+         * @return true/false
+         */
         public boolean isEmpty() {
             return nbvs.isEmpty() && sbvs.isEmpty();
         }
