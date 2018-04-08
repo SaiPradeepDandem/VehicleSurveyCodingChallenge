@@ -51,7 +51,7 @@ public class AnalyzeVehicleSurvey {
      * @throws IOException
      */
     public List<String> readDataFile() throws URISyntaxException, IOException {
-        Path dataFile = Paths.get(AnalyzeVehicleSurvey.class.getResource("E:\\Projects\\VehicleSurveyCodingChallenge\\src\\main\\resources\\data\\sampledata.txt").toURI());
+        Path dataFile = Paths.get(AnalyzeVehicleSurvey.class.getResource("/data/sampledata.txt").toURI());
         return Files.readAllLines(dataFile);
     }
 
