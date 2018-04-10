@@ -3,6 +3,7 @@
  */
 package com.sai.vehiclesurvey.model;
 
+import com.sai.vehiclesurvey.data.Session;
 import com.sai.vehiclesurvey.utils.SurveyUtils;
 
 /**
@@ -18,8 +19,11 @@ public abstract class Vehicle {
 
     private double axleGapInMeters;
 
-    public Vehicle() {
-
+    public Vehicle(double axleGapInMeters) {
+        if (axleGapInMeters < 0) {
+            throw new IllegalArgumentException("Cannot be negative values");
+        }
+        this.axleGapInMeters = axleGapInMeters;
     }
 
     public Vehicle(long hoseAFirstRead, long hoseASecondRead, double axleGapInMeters) {
@@ -80,11 +84,44 @@ public abstract class Vehicle {
     }
 
     /**
+     * Calculates the distance from the front vehicle.
+     *
+     * @param frontVehicle Front vehicle.
+     * @return Distance in meters.
+     */
+    public double findDistanceInMts_FromFrontVehicle(Vehicle frontVehicle) {
+        double timeDiffInSecs = (double)(this.hoseAFirstRead - frontVehicle.hoseASecondRead) / 1000;
+        double speedInMts = frontVehicle.getSpeedInMPS();
+        return speedInMts * timeDiffInSecs;
+    }
+
+    /**
+     * Determines whether the vehicle is in the provided session time range.
+     *
+     * @param session Session time.
+     * @return {@code true} if the vehicle is in the range else returns {@code false}.
+     */
+    public boolean isInSession(Session session) {
+        return isInTimeRange(session.getStart(), session.getEnd());
+    }
+
+    /**
+     * Determines whether the vehicle is in the provided time range.
+     *
+     * @param start Start time of the range.
+     * @param end   End time of the range.
+     * @return {@code true} if the vehicle is in the range else returns {@code false}.
+     */
+    public boolean isInTimeRange(long start, long end) {
+        return hoseAFirstRead >= start && hoseAFirstRead <= end;
+    }
+
+    /**
      * Utility method to check whether both the readings of the hose are
      * recorded or not.
      *
      * @return {@code true} if both the readings are present, else returns
-     * {@code false}.
+     *         {@code false}.
      */
     public boolean isFull() {
         return hoseAFirstRead != null && hoseASecondRead != null;

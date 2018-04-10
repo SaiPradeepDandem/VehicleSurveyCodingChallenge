@@ -9,10 +9,11 @@ package com.sai.vehiclesurvey.data;
  * @author sai.dandem
  */
 public enum Session {
-    MORNING(21600000, 43200000),
-    EVENING(43200000, 64800000);
+    MORNING(21600000, 43199999),
+    EVENING(43200000, 64799999);
 
     private final long start;
+
     private final long end;
 
     private Session(long start, long end) {
@@ -28,4 +29,7 @@ public enum Session {
         return end;
     }
 
+    public boolean containsPeriod(long periodStart, long periodEnd) {
+        return (periodStart >= this.start && periodStart < this.end) && (periodEnd > this.start && periodEnd <= this.end);
+    }
 }

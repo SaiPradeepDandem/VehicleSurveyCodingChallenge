@@ -41,7 +41,7 @@
                             <Codebase>*</Codebase>
                         </manifestEntries>
                         <manifest>
-                            <mainClass>com.sai.vehiclesurvey.AnalyzeVehicleSurvey</mainClass>
+                            <mainClass>com.sai.vehiclesurvey.SurveyAnalyzer</mainClass>
                         </manifest>                        
                     </archive>
 

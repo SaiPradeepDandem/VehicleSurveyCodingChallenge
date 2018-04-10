@@ -36,7 +36,7 @@ public class SouthBoundVehicleTest {
 
     @Test
     public void testIsFull() {
-        SouthBoundVehicle sbv = new SouthBoundVehicle();
+        SouthBoundVehicle sbv = new SouthBoundVehicle(2.5);
         assertEquals(false, sbv.isFull());
         sbv.setHoseAFirstRead(32345);
         assertEquals(false, sbv.isFull());

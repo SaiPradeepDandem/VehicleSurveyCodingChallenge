@@ -14,8 +14,8 @@ public class SouthBoundVehicle extends Vehicle {
 
     private Long hoseBSecondRead;
 
-    public SouthBoundVehicle() {
-        super();
+    public SouthBoundVehicle(double axleGapInMeters) {
+        super(axleGapInMeters);
     }
 
     public SouthBoundVehicle(long hoseAFirstRead, long hoseBFirstRead, long hoseASecondRead, long hoseBSecondRead,

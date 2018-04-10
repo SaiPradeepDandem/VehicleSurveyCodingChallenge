@@ -16,7 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Main class to parse and analyze the vehicle survey data.
+ * Class to read and parse the vehicle survey data and load the structured data into SurveyData object.
  *
  * @author sai.dandem
  */
@@ -28,18 +28,17 @@ public class AnalyzeVehicleSurvey {
         return surveyData;
     }
 
-    public static void main(String[] args) throws URISyntaxException, IOException {
-        AnalyzeVehicleSurvey obj = new AnalyzeVehicleSurvey();
-        List<String> readings = obj.readDataFile();
-        obj.parseData(readings);
-        System.out.println("Days ::" + obj.getSurveyData().getDays().size());
-        for (int i = 0; i < obj.getSurveyData().getDays().size(); i++) {
-            EachDayData dayData = obj.getSurveyData().getDays().get(i);
-            System.out.println("DAY "+(i+1));
-            System.out.println("North Bound Vehicles :: "+dayData.getNorthBoundVehicles().size());
-            System.out.println("South Bound Vehicles :: "+dayData.getSouthBoundVehicles().size());
-            System.out.println("");
-        }
+    /**
+     * Read the data file from the resources and parses the given list of data into the SurveyData object.
+     *
+     * @throws URISyntaxException
+     * @throws IOException
+     */
+    public void loadAndParseData() throws URISyntaxException, IOException {
+        List<String> readings = readDataFile();
+        long stTime = System.currentTimeMillis();
+        parseData(readings);
+        System.out.println("Parsed data in " + (System.currentTimeMillis() - stTime) + "ms");
     }
 
     /**
@@ -81,6 +80,7 @@ public class AnalyzeVehicleSurvey {
      * Class to parse the provided reading and push into the appropriate position.
      */
     class DataParser {
+        private final double axleGap = 2.5;
 
         private EachDayData dayData = new EachDayData();
 
@@ -113,7 +113,7 @@ public class AnalyzeVehicleSurvey {
          */
         private void loadInNB(String reading) {
             if (nbvs.isEmpty()) {
-                nbvs.add(new NorthBoundVehicle());
+                nbvs.add(new NorthBoundVehicle(axleGap));
             }
             if (nbvs.get(0).isFull()) {
                 throw new IllegalStateException("Cannot be a full reading north bound vehicle.");
@@ -139,7 +139,7 @@ public class AnalyzeVehicleSurvey {
          */
         private void loadInSB(String reading) {
             if (sbvs.isEmpty()) {
-                sbvs.add(new SouthBoundVehicle());
+                sbvs.add(new SouthBoundVehicle(axleGap));
             }
             long readingValue = Long.parseLong(reading.substring(1));
             if (sbvs.get(0).isFull()) {

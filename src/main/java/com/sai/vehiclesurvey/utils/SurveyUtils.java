@@ -3,6 +3,8 @@
  */
 package com.sai.vehiclesurvey.utils;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * Utility class for vehicle survey calculations.
  *
@@ -42,7 +44,33 @@ public class SurveyUtils {
         if (endTimeInMs < startTimeInMs) {
             endTimeInMs = startTimeInMs + (MILLIS_PER_24HRS - startTimeInMs) + endTimeInMs;
         }
-        double diffInSecs = (endTimeInMs - startTimeInMs) / 1000;
+        double diffInSecs = (double)(endTimeInMs - startTimeInMs) / 1000;
         return distanceInMts / diffInSecs;
+    }
+
+    /**
+     * Converts the given milli seconds to HH:MM format.
+     *
+     * @param millis Time in milli seconds.
+     * @return HH:MM string format of time.
+     */
+    public static String convertToHHMM(long millis) {
+        if (millis < 0) {
+            throw new IllegalArgumentException("Cannot be negative values");
+        }
+        return String.format("%02d:%02d", TimeUnit.MILLISECONDS.toHours(millis),
+                TimeUnit.MILLISECONDS.toMinutes(millis) - TimeUnit.HOURS.toMinutes(TimeUnit.MILLISECONDS.toHours(millis)));
+    }
+
+    /**
+     * Rounds the given double value to the precision.
+     *
+     * @param value     Value to be rounded.
+     * @param precision Precision
+     * @return Rounded value.
+     */
+    public static double round(double value, int precision) {
+        int scale = (int)Math.pow(10, precision);
+        return (double)Math.round(value * scale) / scale;
     }
 }
