@@ -48,5 +48,5 @@ When the program runs, the below analyis features are printed in the output cons
 <br/><br/>The format of data for each period of time is as `<<period_start_time in HH:MM>> - NB:<<data>>, SB:<<data>>;`<br/>
      *Sample data for Per_Hour period: **00:00** - NB:7, SB:8;  **01:00** - NB:1, SB:7;  **02:00** - NB:2, SB:6; ...*<br/>
      *Sample data for Per_Half_Hour period: **00:00** - NB:3, SB:5;  **00:30** - NB:4, SB:3;  **01:00** - NB:0, SB:3; ...*<br/>
-     *Sample data for Per_Hour Per_20_Minutes: **00:00** - NB:3, SB:2;  **00:20** - NB:2, SB:3;  **00:40** - NB:2, SB:3; ...*<br/>
-     *Sample data for Per_HourPer_15_Minutesperiod: **00:00** - NB:2, SB:1;  **00:15** - NB:1, SB:4;  **00:30** - NB:3, SB:2; ...*<br/>
+     *Sample data for Per_20_Minutes period: **00:00** - NB:3, SB:2;  **00:20** - NB:2, SB:3;  **00:40** - NB:2, SB:3; ...*<br/>
+     *Sample data for Per_15_Minutes period: **00:00** - NB:2, SB:1;  **00:15** - NB:1, SB:4;  **00:30** - NB:3, SB:2; ...*<br/>
