@@ -1,0 +1,13 @@
+@CucumberOptions(
+    monochrome = true,
+    strict = true,
+    features = {"src/test/resources/features"},
+    glue = {"xfe.icap.test"},
+    plugin = {
+      "pretty",
+      "xfe.icap.test.configuration.CucumberHooks",
+      "html:target/cucumber-html-report",
+      "json:target/xfe-cucumber-reports/cucumber.json",
+      "timeline:target/xfe-cucumber-reports"
+    },
+    tags = {"not @Ignore and not @Stress and not @Perfomance"})
