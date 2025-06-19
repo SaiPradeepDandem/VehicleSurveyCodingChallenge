@@ -11,3 +11,16 @@
       "timeline:target/xfe-cucumber-reports"
     },
     tags = {"not @Ignore and not @Stress and not @Perfomance"})
+
+
+String[] args = new String[]{
+            "--monochrome",
+            "--glue", "com.example",
+            "--plugin", "pretty",
+            "--plugin", "com.example.configuration.CucumberHooks",
+            "--plugin", "html:target/cucumber-html-report",
+            "--plugin", "json:target/xfe-cucumber-reports/cucumber.json",
+            "--plugin", "timeline:target/xfe-cucumber-reports",
+            "--tags", "not @Ignore and not @Stress and not @Perfomance",
+            "src/test/resources/features"
+        };
