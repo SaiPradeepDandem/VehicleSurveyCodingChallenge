@@ -1,0 +1,134 @@
+plugins {
+    id 'application'
+    id 'org.openjfx.javafxplugin' version '0.0.13'
+
+}
+
+repositories {
+    mavenCentral()
+}
+
+ext {
+    nodeVersion = '18.18.0'
+    npmVersion = '9.8.1'
+    isWindows = System.properties['os.name'].toLowerCase().contains('windows')
+    nodeDir = file("$buildDir/node")
+    nodeDownloadUrl = isWindows ?
+            "https://nodejs.org/dist/v${nodeVersion}/node-v${nodeVersion}-win-x64.zip" :
+            "https://nodejs.org/dist/v${nodeVersion}/node-v${nodeVersion}-linux-x64.tar.xz"
+    nodeExtractDir = isWindows ?
+            "$nodeDir/node-v${nodeVersion}-win-x64" :
+            "$nodeDir/node-v${nodeVersion}-linux-x64"
+    npmCmd = isWindows ? 'npm.cmd' : 'npm'
+    npxCmd = isWindows ? 'npx.cmd' : 'npx'
+}
+
+javafx {
+    version = "21"
+    modules = ['javafx.controls', 'javafx.fxml']
+}
+
+application {
+    mainClass = 'com.example.MainApp'
+}
+
+
+
+dependencies {
+    implementation 'org.openjfx:javafx-controls:21'
+    implementation 'org.openjfx:javafx-fxml:21'
+
+    testImplementation 'org.testfx:testfx-core:4.0.16-alpha'
+    testImplementation 'org.testfx:testfx-junit5:4.0.16-alpha'
+    testImplementation 'org.assertj:assertj-core:3.24.2'
+
+    testImplementation 'io.cucumber:cucumber-java:7.14.0'
+    testImplementation 'io.cucumber:cucumber-junit-platform-engine:7.14.0'
+    testImplementation 'org.junit.platform:junit-platform-suite-api:1.10.2'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.2'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.10.2'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+task downloadNode {
+    outputs.file "$nodeDir/node-dist.${isWindows ? 'zip' : 'tar.xz'}"
+    doLast {
+        nodeDir.mkdirs()
+        def file = outputs.files.singleFile
+        if (!file.exists()) {
+            new URL(nodeDownloadUrl).withInputStream { input ->
+                file.withOutputStream { out -> out << input }
+            }
+        }
+    }
+}
+
+task extractNode(dependsOn: downloadNode) {
+    doLast {
+        if (isWindows) {
+            copy {
+                from zipTree("$nodeDir/node-dist.zip")
+                into nodeDir
+            }
+        } else {
+            copy {
+                from tarTree(resources.gzip("$nodeDir/node-dist.tar.xz"))
+                into nodeDir
+            }
+        }
+    }
+}
+
+def nodeBin(String tool) {
+    return isWindows ?
+            "$nodeExtractDir/${tool}.cmd" :
+            "$nodeExtractDir/bin/${tool}"
+}
+
+task installNpm(dependsOn: extractNode) {
+    onlyIf { npmVersion != null && !file("${nodeExtractDir}/lib/node_modules/npm").exists() }
+    doLast {
+        exec {
+            workingDir = file("$buildDir")
+            environment "PATH", "${nodeExtractDir}/bin" + File.pathSeparator + System.getenv("PATH")
+            commandLine nodeBin("npm"), "install", "-g", "npm@${npmVersion}"
+        }
+    }
+}
+
+task npmInstallGherkinLint(type: Exec) {
+    dependsOn installNpm
+    workingDir = projectDir
+
+    def binPath = "${nodeExtractDir}" // node.exe and npm.cmd live here in Windows
+
+    environment "PATH", "${binPath}" + File.pathSeparator + System.getenv("PATH")
+    commandLine "${binPath}/npm.cmd", "install", "gherkin-lint", "--save-dev"
+    outputs.dir file("${projectDir}/node_modules")
+}
+
+task lintFeatures(type: Exec) {
+    dependsOn npmInstallGherkinLint
+    description = "Lint .feature files using gherkin-lint"
+    group = "verification"
+    workingDir = projectDir
+
+    def binPath = "${nodeExtractDir}" // for Windows, node.exe and npx.cmd are here
+
+    environment "PATH", "${binPath}" + File.pathSeparator + System.getenv("PATH")
+    commandLine "${binPath}/npx.cmd", "gherkin-lint", "src/test/resources/features"
+}
+
+check.dependsOn lintFeatures
+
+task formatFeatures(type: JavaExec) {
+    group = "formatting"
+    description = "Formats .feature files consistently"
+
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = "com.example.FeatureFormatterRunner"
+}
