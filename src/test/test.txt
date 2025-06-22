@@ -1,16 +1,6 @@
-plugins {
-    id 'application'
-    id 'org.openjfx.javafxplugin' version '0.0.13'
-
-}
-
-repositories {
-    mavenCentral()
-}
-
 ext {
-    nodeVersion = '18.18.0'
-    npmVersion = '9.8.1'
+    nodeVersion = '22.16.0'
+    npmVersion = '11.4.2'
     isWindows = System.properties['os.name'].toLowerCase().contains('windows')
     nodeDir = file("$buildDir/node")
     nodeDownloadUrl = isWindows ?
@@ -19,56 +9,40 @@ ext {
     nodeExtractDir = isWindows ?
             "$nodeDir/node-v${nodeVersion}-win-x64" :
             "$nodeDir/node-v${nodeVersion}-linux-x64"
-    npmCmd = isWindows ? 'npm.cmd' : 'npm'
-    npxCmd = isWindows ? 'npx.cmd' : 'npx'
 }
 
-javafx {
-    version = "21"
-    modules = ['javafx.controls', 'javafx.fxml']
-}
-
-application {
-    mainClass = 'com.example.MainApp'
-}
-
-
-
-dependencies {
-    implementation 'org.openjfx:javafx-controls:21'
-    implementation 'org.openjfx:javafx-fxml:21'
-
-    testImplementation 'org.testfx:testfx-core:4.0.16-alpha'
-    testImplementation 'org.testfx:testfx-junit5:4.0.16-alpha'
-    testImplementation 'org.assertj:assertj-core:3.24.2'
-
-    testImplementation 'io.cucumber:cucumber-java:7.14.0'
-    testImplementation 'io.cucumber:cucumber-junit-platform-engine:7.14.0'
-    testImplementation 'org.junit.platform:junit-platform-suite-api:1.10.2'
-
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.2'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.10.2'
-}
-
-test {
-    useJUnitPlatform()
+def nodeBin(String tool) {
+    return isWindows ?
+            "${nodeExtractDir}/${tool}.cmd" :
+            "${nodeExtractDir}/bin/${tool}"
 }
 
 task downloadNode {
     outputs.file "$nodeDir/node-dist.${isWindows ? 'zip' : 'tar.xz'}"
     doLast {
-        nodeDir.mkdirs()
-        def file = outputs.files.singleFile
-        if (!file.exists()) {
+        def archiveFile = outputs.files.singleFile
+        if (!archiveFile.exists()) {
+            println "Downloading Node.js..."
+            nodeDir.mkdirs()
             new URL(nodeDownloadUrl).withInputStream { input ->
-                file.withOutputStream { out -> out << input }
+                archiveFile.withOutputStream { out -> out << input }
             }
+        } else {
+            println "Node.js archive already exists. Skipping download."
         }
     }
 }
 
 task extractNode(dependsOn: downloadNode) {
+    outputs.dir nodeExtractDir
+    onlyIf {
+        def nodeBinary = isWindows ?
+                file("${nodeExtractDir}/node.exe") :
+                file("${nodeExtractDir}/bin/node")
+        !nodeBinary.exists()
+    }
     doLast {
+        println "Extracting Node.js..."
         if (isWindows) {
             copy {
                 from zipTree("$nodeDir/node-dist.zip")
@@ -83,18 +57,17 @@ task extractNode(dependsOn: downloadNode) {
     }
 }
 
-def nodeBin(String tool) {
-    return isWindows ?
-            "$nodeExtractDir/${tool}.cmd" :
-            "$nodeExtractDir/bin/${tool}"
-}
-
 task installNpm(dependsOn: extractNode) {
-    onlyIf { npmVersion != null && !file("${nodeExtractDir}/lib/node_modules/npm").exists() }
+    def npmFolder = file("${nodeExtractDir}/lib/node_modules/npm")
+    outputs.dir npmFolder
+    onlyIf {
+        npmVersion && !file("${npmFolder}/package.json").exists()
+    }
     doLast {
+        println "Installing npm@${npmVersion}..."
         exec {
             workingDir = file("$buildDir")
-            environment "PATH", "${nodeExtractDir}/bin" + File.pathSeparator + System.getenv("PATH")
+            environment "PATH", "${nodeExtractDir}" + File.pathSeparator + System.getenv("PATH")
             commandLine nodeBin("npm"), "install", "-g", "npm@${npmVersion}"
         }
     }
@@ -103,12 +76,13 @@ task installNpm(dependsOn: extractNode) {
 task npmInstallGherkinLint(type: Exec) {
     dependsOn installNpm
     workingDir = projectDir
-
-    def binPath = "${nodeExtractDir}" // node.exe and npm.cmd live here in Windows
-
+    def binPath = "${nodeExtractDir}"
     environment "PATH", "${binPath}" + File.pathSeparator + System.getenv("PATH")
     commandLine "${binPath}/npm.cmd", "install", "gherkin-lint", "--save-dev"
-    outputs.dir file("${projectDir}/node_modules")
+    outputs.dir file("${projectDir}/node_modules/gherkin-lint")
+    onlyIf {
+        !file("${projectDir}/node_modules/gherkin-lint/package.json").exists()
+    }
 }
 
 task lintFeatures(type: Exec) {
@@ -116,14 +90,13 @@ task lintFeatures(type: Exec) {
     description = "Lint .feature files using gherkin-lint"
     group = "verification"
     workingDir = projectDir
-
-    def binPath = "${nodeExtractDir}" // for Windows, node.exe and npx.cmd are here
-
+    def binPath = "${nodeExtractDir}"
     environment "PATH", "${binPath}" + File.pathSeparator + System.getenv("PATH")
     commandLine "${binPath}/npx.cmd", "gherkin-lint", "src/test/resources/features"
 }
 
 check.dependsOn lintFeatures
+
 
 task formatFeatures(type: JavaExec) {
     group = "formatting"
