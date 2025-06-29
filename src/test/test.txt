@@ -155,3 +155,158 @@ task formatFeatures(type: JavaExec) {
             }
         }
     }
+
+import org.apache.commons.compress.archivers.tar.*;
+import org.apache.commons.compress.compressors.gzip.*;
+
+import java.io.*;
+import java.nio.file.*;
+import java.util.List;
+
+public class TarGzUtils {
+    public static File createTarGz(File baseDir, List<File> additionalFiles, File outputFile) throws IOException {
+        try (
+            FileOutputStream fos = new FileOutputStream(outputFile);
+            BufferedOutputStream bos = new BufferedOutputStream(fos);
+            GzipCompressorOutputStream gzos = new GzipCompressorOutputStream(bos);
+            TarArchiveOutputStream taos = new TarArchiveOutputStream(gzos)
+        ) {
+            taos.setLongFileMode(TarArchiveOutputStream.LONGFILE_POSIX);
+
+            // Add base directory recursively
+            Files.walk(baseDir.toPath())
+                .filter(Files::isRegularFile)
+                .forEach(path -> {
+                    File file = path.toFile();
+                    try {
+                        addFileToTar(taos, file, baseDir.toPath().relativize(path).toString());
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+
+            // Add extra files with flat names
+            for (File file : additionalFiles) {
+                addFileToTar(taos, file, file.getName());
+            }
+        }
+
+        return outputFile;
+    }
+
+    private static void addFileToTar(TarArchiveOutputStream taos, File file, String entryName) throws IOException {
+        TarArchiveEntry entry = new TarArchiveEntry(file, entryName);
+        taos.putArchiveEntry(entry);
+        try (FileInputStream fis = new FileInputStream(file)) {
+            byte[] buffer = new byte[4096];
+            int read;
+            while ((read = fis.read(buffer)) != -1) {
+                taos.write(buffer, 0, read);
+            }
+        }
+        taos.closeArchiveEntry();
+    }
+}
+
+import com.jcraft.jsch.*;
+
+import java.io.*;
+import java.util.Properties;
+
+public class SftpUploader {
+    private final String host, user, password;
+    private final int port;
+
+    public SftpUploader(String host, int port, String user, String password) {
+        this.host = host;
+        this.port = port;
+        this.user = user;
+        this.password = password;
+    }
+
+    public boolean uploadAndExtract(File tarGzFile, String remoteDir) throws Exception {
+        JSch jsch = new JSch();
+        Session session = jsch.getSession(user, host, port);
+        session.setPassword(password);
+
+        Properties config = new Properties();
+        config.put("StrictHostKeyChecking", "no");
+        session.setConfig(config);
+        session.connect();
+
+        String remoteTarGz = remoteDir + "/" + tarGzFile.getName();
+
+        // 1. SFTP upload
+        ChannelSftp sftp = (ChannelSftp) session.openChannel("sftp");
+        sftp.connect();
+        try {
+            createRemoteDir(sftp, remoteDir);
+            sftp.put(new FileInputStream(tarGzFile), remoteTarGz);
+        } finally {
+            sftp.disconnect();
+        }
+
+        // 2. Extract using exec
+        String cmd = "cd " + remoteDir +
+                     " && tar -xzf " + tarGzFile.getName() +
+                     " && rm " + tarGzFile.getName();
+
+        ChannelExec exec = (ChannelExec) session.openChannel("exec");
+        exec.setCommand(cmd);
+        exec.setErrStream(System.err);
+        InputStream in = exec.getInputStream();
+        exec.connect();
+
+        String result = readStream(in);
+        exec.disconnect();
+
+        session.disconnect();
+
+        System.out.println("Remote unpack result:\n" + result);
+
+        return exec.getExitStatus() == 0;
+    }
+
+    private void createRemoteDir(ChannelSftp sftp, String dir) throws SftpException {
+        try {
+            sftp.cd(dir);
+        } catch (SftpException e) {
+            sftp.mkdir(dir);
+        }
+    }
+
+    private String readStream(InputStream in) throws IOException {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+        StringBuilder sb = new StringBuilder();
+        String line;
+        while ((line = reader.readLine()) != null) {
+            sb.append(line).append("\n");
+        }
+        return sb.toString();
+    }
+}
+import java.io.File;
+import java.util.Arrays;
+
+public class Main {
+    public static void main(String[] args) throws Exception {
+        File configDir = new File("config"); // base directory
+        File file4 = new File("File4.txt");
+        File file5 = new File("File5.txt");
+
+        File tarGz = new File("upload.tar.gz");
+
+        TarGzUtils.createTarGz(configDir, Arrays.asList(file4, file5), tarGz);
+
+        SftpUploader uploader = new SftpUploader("linux-server-ip", 22, "username", "password");
+
+        boolean success = uploader.uploadAndExtract(tarGz, "/home/config");
+
+        // Cleanup
+        tarGz.delete();
+
+        System.out.println("Upload and extract success: " + success);
+    }
+}
+implementation 'org.apache.commons:commons-compress:1.24.0'
+implementation 'com.jcraft:jsch:0.1.55'
