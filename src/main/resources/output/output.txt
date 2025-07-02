@@ -104,3 +104,79 @@ public class TarGzUploader {
         exec.disconnect();
     }
 }
+import java.lang.management.ManagementFactory;
+import java.lang.reflect.Method;
+
+import javax.management.MBeanServer;
+
+/**
+ * Reflection based JVM heap dumper.
+ */
+public final class HeapDump {
+
+    /** This is the name of the HotSpot Diagnostic MBean. */
+    private static final String HOTSPOT_BEAN_NAME =
+            "com.sun.management:type=HotSpotDiagnostic";
+
+    /** Field to store the hotspot diagnostic MBean. */
+    private static volatile Object hotspotMBean;
+
+    /**
+     * Constructor.
+     */
+    private HeapDump() {
+        /* Empty. */
+    }
+
+    /**
+     * Call this method from your application whenever you want to dump the heap snapshot into a file. Only dumps
+     * live objects.
+     *
+     * @param fileName name of the heap dump file
+     */
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    public static void dumpHeap(final String fileName) {
+        initHotspotMBean();
+        try {
+            final Class clazz = Class.forName("com.sun.management.HotSpotDiagnosticMXBean");
+            final Method m = clazz.getMethod("dumpHeap", String.class, boolean.class);
+            m.invoke(hotspotMBean, fileName, true);
+        } catch (final RuntimeException re) {
+            throw re;
+        } catch (final Exception exp) {
+            throw new RuntimeException(exp);
+        }
+    }
+
+    /**
+     * Get the hotspot diagnostic MBean from the platform MBean server.
+     *
+     * @return hotspot diagnostic MBean
+     */
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    private static Object getHotspotMBean() {
+        try {
+            final Class clazz = Class.forName("com.sun.management.HotSpotDiagnosticMXBean");
+            final MBeanServer server = ManagementFactory.getPlatformMBeanServer();
+            return ManagementFactory.newPlatformMXBeanProxy(server,
+                    HOTSPOT_BEAN_NAME, clazz);
+        } catch (final RuntimeException re) {
+            throw re;
+        } catch (final Exception exp) {
+            throw new RuntimeException(exp);
+        }
+    }
+
+    /**
+     * Initialize the hotspot diagnostic MBean field
+     */
+    private static void initHotspotMBean() {
+        if (hotspotMBean == null) {
+            synchronized (HeapDump.class) {
+                if (hotspotMBean == null) {
+                    hotspotMBean = getHotspotMBean();
+                }
+            }
+        }
+    }
+}
